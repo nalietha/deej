@@ -3,6 +3,7 @@ package deej
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -18,6 +19,10 @@ type sessionMap struct {
 
 	m    map[string][]Session
 	lock sync.Locker
+
+	// serializes refreshes against volume changes, so sessions are never released while being adjusted.
+	// refreshes can come from the slider loop, the tray, config reloads and the web UI
+	opLock sync.Mutex
 
 	sessionFinder SessionFinder
 
@@ -130,7 +135,10 @@ func (m *sessionMap) setupOnConfigReload() {
 			select {
 			case <-configReloadedChannel:
 				m.logger.Info("Detected config reload, attempting to re-acquire all audio sessions")
-				m.refreshSessions(false)
+
+				// performance: forcing is okay here because reloads are user-paced (the web UI debounces its saves),
+				// and a profile switch must recompute which sessions count as unmapped right away
+				m.refreshSessions(true)
 			}
 		}
 	}()
@@ -151,6 +159,14 @@ func (m *sessionMap) setupOnSliderMove() {
 
 // performance: explain why force == true at every such use to avoid unintended forced refresh spams
 func (m *sessionMap) refreshSessions(force bool) {
+	m.opLock.Lock()
+	defer m.opLock.Unlock()
+
+	m.refreshSessionsLocked(force)
+}
+
+// same as refreshSessions, for callers already holding opLock
+func (m *sessionMap) refreshSessionsLocked(force bool) {
 
 	// make sure enough time passed since the last refresh, unless force is true in which case always clear
 	if !force && m.lastSessionRefresh.Add(minTimeBetweenSessionRefreshes).After(time.Now()) {
@@ -207,11 +223,13 @@ func (m *sessionMap) sessionMapped(session Session) bool {
 }
 
 func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
+	m.opLock.Lock()
+	defer m.opLock.Unlock()
 
 	// first of all, ensure our session map isn't moldy
 	if m.lastSessionRefresh.Add(maxTimeBetweenSessionRefreshes).Before(time.Now()) {
 		m.logger.Debug("Stale session map detected on slider move, refreshing")
-		m.refreshSessions(true)
+		m.refreshSessionsLocked(true)
 	}
 
 	// get the targets mapped to this slider from the config
@@ -261,13 +279,13 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 	// processes could've opened since the last time this slider moved.
 	// if they haven't, the cooldown will take care to not spam it up
 	if !targetFound {
-		m.refreshSessions(false)
+		m.refreshSessionsLocked(false)
 	} else if adjustmentFailed {
 
 		// performance: the reason that forcing a refresh here is okay is that we'll only get here
 		// when a session's SetVolume call errored, such as in the case of a stale master session
 		// (or another, more catastrophic failure happens)
-		m.refreshSessions(true)
+		m.refreshSessionsLocked(true)
 	}
 }
 
@@ -360,6 +378,53 @@ func (m *sessionMap) clear() {
 	}
 
 	m.logger.Debug("Session map cleared")
+}
+
+// SessionInfo describes a currently available audio session target, for display purposes
+type SessionInfo struct {
+	Key    string  `json:"key"`
+	Kind   string  `json:"kind"`
+	Volume float32 `json:"volume"`
+	Count  int     `json:"count"`
+}
+
+// snapshot lists all currently known session targets, refreshing first if allowed by the cooldown
+func (m *sessionMap) snapshot(refresh bool) []SessionInfo {
+	m.opLock.Lock()
+	defer m.opLock.Unlock()
+
+	if refresh {
+		m.refreshSessionsLocked(false)
+	}
+
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	result := make([]SessionInfo, 0, len(m.m))
+	for key, sessions := range m.m {
+		if len(sessions) == 0 {
+			continue
+		}
+
+		kind := "app"
+		switch {
+		case key == masterSessionName, key == systemSessionName, key == inputSessionName:
+			kind = key
+		case deviceSessionKeyPattern.MatchString(key):
+			kind = "device"
+		}
+
+		result = append(result, SessionInfo{
+			Key:    key,
+			Kind:   kind,
+			Volume: sessions[0].GetVolume(),
+			Count:  len(sessions),
+		})
+	}
+
+	sort.Slice(result, func(i, j int) bool { return result[i].Key < result[j].Key })
+
+	return result
 }
 
 func (m *sessionMap) String() string {

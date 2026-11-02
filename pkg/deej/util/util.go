@@ -39,7 +39,7 @@ func Linux() bool {
 // SetupCloseHandler creates a 'listener' on a new goroutine which will notify the
 // program if it receives an interrupt from the OS
 func SetupCloseHandler() chan os.Signal {
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	return c
@@ -123,4 +123,21 @@ func SignificantlyDifferent(old float32, new float32, noiseReductionLevel string
 // a helper to make sure volume snaps correctly to 0 and 100, where appropriate
 func almostEquals(a float32, b float32) bool {
 	return math.Abs(float64(a-b)) < 0.000001
+}
+
+// OpenURL opens the given URL in the user's default browser
+func OpenURL(url string) error {
+	command := exec.Command("xdg-open", url)
+	if !Linux() {
+		command = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	}
+
+	if err := command.Start(); err != nil {
+		return fmt.Errorf("open url: %w", err)
+	}
+
+	// reap it in the background
+	go command.Wait()
+
+	return nil
 }

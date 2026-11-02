@@ -1,0 +1,1300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>deej remix</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237c5cff'/%3E%3Crect x='7' y='6' width='3' height='20' rx='1.5' fill='%23fff' opacity='.5'/%3E%3Crect x='14.5' y='6' width='3' height='20' rx='1.5' fill='%23fff' opacity='.5'/%3E%3Crect x='22' y='6' width='3' height='20' rx='1.5' fill='%23fff' opacity='.5'/%3E%3Crect x='5' y='17' width='7' height='4' rx='1' fill='%23fff'/%3E%3Crect x='12.5' y='9' width='7' height='4' rx='1' fill='%23fff'/%3E%3Crect x='20' y='20' width='7' height='4' rx='1' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #090b10;
+  --bg2: #0e1118;
+  --panel: #131722;
+  --panel2: #1a1f2c;
+  --panel3: #222837;
+  --line: #262c3b;
+  --line2: #323a4d;
+  --text: #e9ecf3;
+  --muted: #8b93a7;
+  --dim: #5b6377;
+  --accent: #7c5cff;
+  --accent2: #22d3ee;
+  --ok: #2fd27a;
+  --warn: #ffb547;
+  --bad: #ff5d6c;
+  --radius: 16px;
+  --mono: ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(124, 92, 255, .14), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(34, 211, 238, .08), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font: 14px/1.45 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, #000, transparent 70%);
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+::selection { background: rgba(124, 92, 255, .45); }
+
+.app { position: relative; z-index: 1; max-width: 1600px; margin: 0 auto; padding: 18px 24px 40px; }
+
+/* ── header ─────────────────────────────── */
+header { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.logo { display: flex; align-items: baseline; gap: 2px; font-weight: 800; font-size: 26px; letter-spacing: -.04em; user-select: none; }
+.logo .slash { color: var(--dim); font-weight: 400; margin: 0 2px; }
+.logo .remix {
+  background: linear-gradient(90deg, var(--accent), var(--accent2) 60%, #ff6b8b);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-style: italic;
+}
+.spacer { flex: 1; }
+.pill {
+  display: inline-flex; align-items: center; gap: 9px; height: 34px; padding: 0 14px;
+  border-radius: 999px; background: var(--panel); border: 1px solid var(--line);
+  font: 12px/1 var(--mono); color: var(--muted); white-space: nowrap;
+}
+button.pill:hover { border-color: var(--line2); color: var(--text); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+.pill.connected .dot { background: var(--ok); box-shadow: 0 0 0 0 rgba(47, 210, 122, .6); animation: ping 2s infinite; }
+.pill.connected { color: var(--text); }
+.pill.searching .dot, .pill.connecting .dot { background: var(--warn); animation: blink 1s infinite; }
+.pill.disconnected .dot { background: var(--bad); }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(47, 210, 122, .55); } 70%, 100% { box-shadow: 0 0 0 8px rgba(47, 210, 122, 0); } }
+@keyframes blink { 50% { opacity: .25; } }
+.save-state { font: 12px var(--mono); color: var(--dim); min-width: 70px; text-align: right; transition: color .2s; }
+.save-state.pending { color: var(--warn); }
+.save-state.ok { color: var(--ok); }
+.icon-btn {
+  width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--muted);
+}
+.icon-btn:hover { color: var(--text); border-color: var(--line2); }
+.icon-btn svg { width: 17px; height: 17px; }
+
+/* ── profiles ───────────────────────────── */
+.profiles { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
+.tabs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tab {
+  position: relative; height: 36px; padding: 0 16px; border-radius: 11px;
+  background: transparent; border: 1px solid var(--line); color: var(--muted); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.tab:hover { color: var(--text); border-color: var(--line2); background: var(--panel); }
+.tab.on { color: #fff; background: linear-gradient(180deg, rgba(124, 92, 255, .32), rgba(124, 92, 255, .14)); border-color: rgba(124, 92, 255, .7); box-shadow: 0 6px 24px -10px rgba(124, 92, 255, .9); }
+.tab .key { font: 10px var(--mono); color: var(--dim); border: 1px solid var(--line2); border-radius: 4px; padding: 0 4px; }
+.tab.on .key { color: #cfc6ff; border-color: rgba(207, 198, 255, .35); }
+.tab .bolt { color: var(--warn); font-size: 12px; }
+.tab-input { height: 36px; width: 170px; padding: 0 12px; border-radius: 11px; background: var(--panel); border: 1px solid var(--accent); outline: none; }
+.profile-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 40px;
+  padding: 6px 8px 6px 14px; border-radius: 12px; background: rgba(19, 23, 34, .7); border: 1px solid var(--line);
+}
+.profile-bar .label { font-size: 12px; color: var(--muted); }
+.profile-bar .label b { color: var(--text); font-weight: 600; }
+.btn {
+  height: 30px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line2);
+  background: var(--panel2); color: var(--text); font-size: 12px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.btn:hover { background: var(--panel3); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.ghost:hover { color: var(--text); background: var(--panel2); }
+.btn.danger:hover { color: var(--bad); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { filter: brightness(1.1); }
+.btn:disabled { opacity: .45; cursor: default; }
+
+/* ── chips ──────────────────────────────── */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 6px 0 10px; border-radius: 8px;
+  background: var(--panel2); border: 1px solid var(--line2); font: 12px var(--mono); color: var(--text);
+  max-width: 100%;
+}
+.chip .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip .x { width: 18px; height: 18px; display: grid; place-items: center; border: 0; background: none; color: var(--dim); border-radius: 5px; padding: 0; }
+.chip .x:hover { color: var(--bad); background: rgba(255, 93, 108, .12); }
+.chip.missing { border-style: dashed; color: var(--muted); }
+.chip.special { border-color: rgba(124, 92, 255, .45); background: rgba(124, 92, 255, .1); }
+.chip-input {
+  height: 26px; min-width: 110px; flex: 1; padding: 0 8px; border-radius: 8px; border: 1px dashed var(--line2);
+  background: transparent; font: 12px var(--mono); outline: none;
+}
+.chip-input:focus { border-style: solid; border-color: var(--accent); background: var(--bg2); }
+
+/* ── mixer ──────────────────────────────── */
+.section-title { display: flex; align-items: center; gap: 10px; margin: 26px 0 12px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.section-title .hint { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--dim); }
+.mixer { display: flex; gap: 14px; overflow-x: auto; padding: 4px 4px 16px; scroll-snap-type: x proximity; }
+.mixer::-webkit-scrollbar { height: 10px; }
+.mixer::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 10px; }
+
+.strip {
+  --c: var(--accent); --v: 0;
+  position: relative; flex: none; width: 200px; scroll-snap-align: start;
+  display: flex; flex-direction: column; gap: 12px; padding: 14px;
+  border-radius: var(--radius); background: linear-gradient(180deg, var(--panel), var(--bg2)); border: 1px solid var(--line);
+  transition: box-shadow .35s, border-color .35s, transform .2s;
+}
+.strip::before {
+  content: ""; position: absolute; inset: 0 0 auto; height: 3px; border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--c); opacity: .9;
+}
+.strip.live { border-color: color-mix(in srgb, var(--c) 70%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 40%, transparent), 0 18px 50px -18px var(--c); }
+.strip.offline { opacity: .55; }
+.strip.offline:hover { opacity: .85; }
+.strip.drop { border-color: var(--c); box-shadow: 0 0 0 2px var(--c); transform: translateY(-2px); }
+.strip.armed { cursor: copy; }
+.strip.armed::after {
+  content: "click to assign"; position: absolute; inset: 0; border-radius: var(--radius);
+  display: grid; place-items: center; font: 600 12px var(--mono); color: #fff;
+  background: color-mix(in srgb, var(--c) 18%, rgba(9, 11, 16, .55)); border: 2px dashed var(--c);
+}
+.strip-head { display: flex; align-items: center; gap: 8px; }
+.strip-head .idx { font: 700 11px var(--mono); color: var(--c); letter-spacing: .08em; }
+.strip-head .state { font: 10px var(--mono); color: var(--dim); }
+.strip-head .x { margin-left: auto; border: 0; background: none; color: var(--dim); padding: 2px 4px; border-radius: 6px; }
+.strip-head .x:hover { color: var(--bad); }
+.name {
+  width: 100%; height: 34px; padding: 0 10px; border-radius: 9px; border: 1px solid transparent; background: transparent;
+  font-size: 17px; font-weight: 700; letter-spacing: -.01em; outline: none;
+}
+.name:hover { background: var(--panel2); }
+.name:focus { background: var(--bg2); border-color: var(--line2); }
+.name::placeholder { color: var(--dim); }
+
+.seg { display: flex; padding: 3px; gap: 3px; border-radius: 10px; background: var(--bg2); border: 1px solid var(--line); }
+.seg button { flex: 1; height: 26px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 600; }
+.seg button:hover { color: var(--text); }
+.seg button.on { background: var(--panel3); color: var(--text); box-shadow: inset 0 0 0 1px var(--line2); }
+.strip .seg button.on { box-shadow: inset 0 -2px 0 var(--c), inset 0 0 0 1px var(--line2); }
+
+/* fader */
+.fader { position: relative; height: 230px; display: flex; justify-content: center; gap: 30px; padding: 14px 0; }
+.meter { display: flex; flex-direction: column-reverse; gap: 3px; width: 6px; }
+.meter i { flex: 1; border-radius: 2px; background: #1b2030; transition: background .08s; }
+.meter i.on { background: var(--c); box-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent); }
+.meter i.on.hot { background: #ffd166; box-shadow: 0 0 6px rgba(255, 209, 102, .6); }
+.meter i.on.peak { background: var(--bad); box-shadow: 0 0 6px rgba(255, 93, 108, .6); }
+.track { position: relative; width: 8px; border-radius: 4px; background: #07090d; box-shadow: inset 0 1px 3px rgba(0, 0, 0, .8), 0 0 0 1px #1d2230; }
+.fill { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--v) * 100%); border-radius: 4px; background: linear-gradient(to top, color-mix(in srgb, var(--c) 30%, transparent), var(--c)); transition: height .06s linear; }
+.cap {
+  position: absolute; left: 50%; bottom: calc(var(--v) * 100%); width: 46px; height: 26px; transform: translate(-50%, 50%);
+  border-radius: 7px; background: linear-gradient(180deg, #4a5268, #262c3b 45%, #1c212d); border: 1px solid #0c0e13;
+  box-shadow: 0 8px 18px -6px rgba(0, 0, 0, .9), inset 0 1px 0 rgba(255, 255, 255, .18);
+  transition: bottom .06s linear;
+}
+.cap::after { content: ""; position: absolute; left: 7px; right: 7px; top: 50%; height: 2px; margin-top: -1px; border-radius: 2px; background: var(--c); box-shadow: 0 0 8px var(--c); }
+.scale { display: flex; flex-direction: column; justify-content: space-between; font: 9px var(--mono); color: var(--dim); width: 18px; }
+.cal-mark { position: absolute; left: -5px; right: -5px; height: 2px; background: var(--warn); border-radius: 1px; opacity: .85; }
+
+/* knob */
+.knob { height: 230px; display: grid; place-items: center; }
+.knob svg { width: 168px; height: 168px; overflow: visible; }
+.k-track { fill: none; stroke: #1b2030; stroke-width: 9; stroke-linecap: round; }
+.k-arc { fill: none; stroke: var(--c); stroke-width: 9; stroke-linecap: round; filter: drop-shadow(0 0 6px var(--c)); transition: stroke-dasharray .06s linear; }
+.k-tick { stroke: var(--line2); stroke-width: 2; stroke-linecap: round; }
+.k-cap { fill: url(#knobGrad); stroke: #0c0e13; stroke-width: 1.5; }
+.k-ring { fill: none; stroke: rgba(255, 255, 255, .06); stroke-width: 1; }
+.k-ptr { stroke: var(--c); stroke-width: 4; stroke-linecap: round; filter: drop-shadow(0 0 4px var(--c)); }
+.k-body { transition: transform .06s linear; transform-origin: 70px 70px; transform: rotate(calc(-135deg + var(--v) * 270deg)); }
+
+.readout { display: flex; align-items: baseline; justify-content: center; gap: 2px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.readout .val { font-size: 38px; font-weight: 700; letter-spacing: -.04em; line-height: 1; }
+.readout .pct { font-size: 14px; color: var(--muted); }
+.readout .raw { margin-left: 10px; font-size: 10px; color: var(--dim); }
+.strip.novalue .readout .val { color: var(--dim); }
+
+.targets { display: flex; flex-direction: column; gap: 8px; min-height: 74px; padding: 10px; border-radius: 12px; border: 1px dashed var(--line2); background: rgba(9, 11, 16, .45); }
+.targets .empty { font-size: 12px; color: var(--dim); }
+.targets .chip { cursor: grab; }
+.targets .chip-input { flex: none; width: 100%; }
+
+details.tune { border-top: 1px solid var(--line); padding-top: 8px; }
+details.tune summary { list-style: none; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 6px; user-select: none; }
+details.tune summary::-webkit-details-marker { display: none; }
+details.tune summary::before { content: "›"; display: inline-block; transition: transform .2s; font-size: 15px; line-height: 1; }
+details.tune[open] summary::before { transform: rotate(90deg); }
+details.tune summary:hover { color: var(--text); }
+.tune-body { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
+.row .seg { flex: 0 0 120px; }
+.swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+.swatches button { width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; padding: 0; }
+.swatches button.on { border-color: #fff; }
+.note { font-size: 11px; color: var(--dim); }
+.cal { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 10px; background: rgba(255, 181, 71, .08); border: 1px solid rgba(255, 181, 71, .3); }
+.cal .nums { font: 12px var(--mono); color: var(--warn); }
+
+.switch { position: relative; width: 36px; height: 20px; flex: none; }
+.switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--panel3); border: 1px solid var(--line2); transition: background .2s; pointer-events: none; }
+.switch span::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--muted); transition: transform .2s, background .2s; }
+.switch input:checked + span { background: color-mix(in srgb, var(--c, var(--accent)) 45%, var(--panel3)); }
+.switch input:checked + span::after { transform: translateX(16px); background: #fff; }
+.switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.add-strip {
+  flex: none; width: 120px; border-radius: var(--radius); border: 1px dashed var(--line2); background: transparent;
+  color: var(--dim); display: grid; place-items: center; font-weight: 600; font-size: 13px;
+}
+.add-strip:hover { color: var(--text); border-color: var(--accent); background: rgba(124, 92, 255, .06); }
+
+/* ── sessions dock ──────────────────────── */
+.dock { padding: 16px; border-radius: var(--radius); background: rgba(19, 23, 34, .75); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 14px; }
+.dock .group { display: flex; flex-direction: column; gap: 8px; }
+.dock .group-label { font-size: 11px; color: var(--dim); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.sess { height: 34px; padding: 0 10px; gap: 8px; cursor: grab; border-radius: 10px; transition: transform .15s, border-color .2s, box-shadow .2s; }
+.sess:hover { border-color: var(--accent); transform: translateY(-1px); }
+.sess.arming { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(124, 92, 255, .45); background: rgba(124, 92, 255, .18); }
+.sess.pulse { border-color: var(--pc, var(--accent)); box-shadow: 0 0 18px -4px var(--pc, var(--accent)); }
+.sess .kind { font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+.sess .vol { width: 38px; height: 4px; border-radius: 2px; background: #07090d; overflow: hidden; flex: none; }
+.sess .vol i { display: block; height: 100%; background: var(--muted); }
+.sess .dots { display: inline-flex; gap: 3px; }
+.sess .dots i { width: 7px; height: 7px; border-radius: 50%; }
+.sess .count { font-size: 10px; color: var(--dim); }
+
+/* ── drawer ─────────────────────────────── */
+.scrim { position: fixed; inset: 0; z-index: 20; background: rgba(3, 4, 7, .55); backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity .25s; }
+.scrim.open { opacity: 1; pointer-events: auto; }
+.drawer {
+  position: fixed; z-index: 21; top: 0; right: 0; bottom: 0; width: min(420px, 100vw); overflow-y: auto;
+  background: var(--bg2); border-left: 1px solid var(--line); padding: 22px; transform: translateX(105%); transition: transform .3s cubic-bezier(.2, .8, .2, 1);
+  display: flex; flex-direction: column; gap: 22px;
+}
+.drawer.open { transform: none; box-shadow: -30px 0 80px -20px rgba(0, 0, 0, .8); }
+.drawer h2 { margin: 0; font-size: 18px; letter-spacing: -.01em; }
+.drawer h3 { margin: 0 0 10px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.field > label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.field select, .field input[type=number] {
+  height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line2); background: var(--panel); outline: none;
+}
+.field select:focus, .field input:focus { border-color: var(--accent); }
+.field .help { font-size: 11px; color: var(--dim); }
+.ports { display: flex; flex-direction: column; gap: 6px; }
+.port {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel);
+  text-align: left; width: 100%;
+}
+.port:hover { border-color: var(--line2); }
+.port.deej { border-color: rgba(47, 210, 122, .5); background: rgba(47, 210, 122, .07); }
+.port .pn { font: 600 13px var(--mono); }
+.port .pd { font-size: 11px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.port .badge { margin-left: auto; font: 600 10px var(--mono); padding: 3px 7px; border-radius: 6px; background: var(--panel3); color: var(--muted); white-space: nowrap; }
+.port.deej .badge { background: rgba(47, 210, 122, .18); color: var(--ok); }
+.spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .2); border-top-color: #fff; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 12px; }
+.kv dt { color: var(--dim); }
+.kv dd { margin: 0; font-family: var(--mono); color: var(--muted); }
+
+.banner {
+  position: fixed; z-index: 30; left: 50%; top: 16px; transform: translate(-50%, -150%); transition: transform .3s;
+  padding: 10px 16px; border-radius: 12px; background: #2a1418; border: 1px solid rgba(255, 93, 108, .5); color: #ffc2c8; font-size: 13px;
+  display: flex; align-items: center; gap: 10px; box-shadow: 0 20px 60px -20px #000;
+}
+.banner.show { transform: translate(-50%, 0); }
+.toast {
+  position: fixed; z-index: 30; right: 20px; bottom: 20px; padding: 10px 14px; border-radius: 10px; font-size: 13px;
+  background: var(--panel2); border: 1px solid var(--line2); box-shadow: 0 20px 60px -20px #000;
+  opacity: 0; transform: translateY(10px); transition: opacity .2s, transform .2s; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: none; }
+.toast.error { border-color: rgba(255, 93, 108, .6); color: #ffc2c8; }
+footer { margin-top: 28px; display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; color: var(--dim); }
+kbd { font: 10px var(--mono); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--line2); color: var(--muted); }
+
+@media (max-width: 640px) {
+  .app { padding: 14px 16px 30px; }
+  .save-state { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="knobGrad" cx="40%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#4a5268"/>
+      <stop offset=".55" stop-color="#262c3b"/>
+      <stop offset="1" stop-color="#161a24"/>
+    </radialGradient>
+  </defs>
+</svg>
+
+<div class="app">
+  <header>
+    <div class="logo" aria-label="deej remix"><span>deej</span><span class="slash">//</span><span class="remix">remix</span></div>
+    <div class="spacer"></div>
+    <span class="save-state" id="saveState"></span>
+    <button class="pill disconnected" id="conn" title="Connection settings"><span class="dot"></span><span id="connText">Connecting…</span></button>
+    <button class="icon-btn" id="openSettings" title="Settings" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </header>
+
+  <div class="profiles">
+    <div class="tabs" id="tabs"></div>
+    <div class="profile-bar" id="profileBar"></div>
+  </div>
+
+  <div class="section-title">Pots <span class="hint" id="mixerHint"></span></div>
+  <div class="mixer" id="mixer"></div>
+
+  <div class="section-title">Audio sessions <span class="hint">drag onto a pot, or click one and then click a pot</span>
+    <span class="spacer"></span>
+    <button class="btn ghost" id="rescan">↻ Re-scan</button>
+  </div>
+  <div class="dock" id="dock"></div>
+
+  <footer>
+    <span><kbd>1</kbd>–<kbd>9</kbd> switch profile</span>
+    <span><kbd>Esc</kbd> cancel</span>
+    <span class="spacer"></span>
+    <span id="version"></span>
+  </footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Settings"></aside>
+<div class="banner" id="banner"><span class="spin"></span> Can't reach deej. Is it running? Retrying…</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+const PALETTE = ["#7c5cff", "#22d3ee", "#ff6b8b", "#ffb547", "#2fd27a", "#4dabf7", "#f783ac", "#a9e34b", "#b197fc", "#ff922b"];
+const SPECIALS = [
+  { key: "master", desc: "Master output volume" },
+  { key: "mic", desc: "Default microphone input level" },
+  { key: "system", desc: "System sounds (Windows)" },
+  { key: "deej.unmapped", desc: "Every app that isn't on another pot" },
+  { key: "deej.current", desc: "Whichever app is in focus (Windows)" },
+];
+// physical properties of a pot - shared by every profile
+const HARDWARE_KEYS = ["type", "invert", "min", "max"];
+const BAUD_RATES = [9600, 19200, 38400, 57600, 115200];
+const METER_SEGMENTS = 26;
+
+const S = {
+  config: null,
+  profiles: [],
+  status: { state: "disconnected", raw: [], values: [], num_sliders: 0 },
+  sessions: [],
+  platform: "",
+  version: "",
+  offline: false,
+  armed: null,            // session key waiting to be assigned by clicking a pot
+  tuneOpen: {},           // pot idx -> tune panel expanded
+  calibrating: {},        // pot idx -> { min, max }
+  newProfile: false,
+  renaming: false,
+  drawer: false,
+  ports: null,
+  probing: false,
+  lastValues: [],
+  liveTimers: {},
+};
+
+let serverConfigJSON = "";
+let saveTimer = null;
+let saving = false;
+
+/* ── tiny DOM helpers ─────────────────────────── */
+const $ = (sel, root = document) => root.querySelector(sel);
+
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  setProps(el, props);
+  appendKids(el, kids);
+  return el;
+}
+
+function s(tag, props, ...kids) {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  setProps(el, props);
+  appendKids(el, kids);
+  return el;
+}
+
+function setProps(el, props) {
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") el.setAttribute("class", v);
+    else if (k === "style") for (const [sk, sv] of Object.entries(v)) el.style.setProperty(sk, sv);
+    else if (k === "dataset") Object.assign(el.dataset, v);
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k === "value" || k === "checked" || k === "open") el[k] = v;
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+}
+
+function appendKids(el, kids) {
+  for (const kid of kids.flat(Infinity)) {
+    if (kid == null || kid === false) continue;
+    el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  }
+}
+
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const lc = (str) => String(str || "").toLowerCase();
+
+/* ── config helpers ───────────────────────────── */
+function activeProfile() {
+  return S.config.profiles[S.config.active_profile];
+}
+
+function potColor(idx, pot) {
+  return (pot && pot.color) || PALETTE[idx % PALETTE.length];
+}
+
+function blankPot() {
+  return { name: "", type: "slider", color: "", invert: false, curve: "linear", min: 0, max: 1023, targets: [] };
+}
+
+function getPot(idx) {
+  return activeProfile().pots[idx];
+}
+
+function ensurePot(idx, profile = activeProfile()) {
+  if (!profile.pots[idx]) {
+    const pot = blankPot();
+
+    // inherit the hardware settings from wherever this pot is already configured
+    for (const other of Object.values(S.config.profiles)) {
+      if (other.pots[idx]) {
+        for (const key of HARDWARE_KEYS) pot[key] = other.pots[idx][key];
+        break;
+      }
+    }
+
+    profile.pots[idx] = pot;
+  }
+
+  return profile.pots[idx];
+}
+
+function setHardware(idx, key, value) {
+  for (const profile of Object.values(S.config.profiles)) {
+    ensurePot(idx, profile)[key] = value;
+  }
+  commit();
+}
+
+function potCount() {
+  const configured = Math.max(-1, ...Object.keys(activeProfile().pots).map(Number));
+  return Math.max(S.status.num_sliders || 0, configured + 1, 1);
+}
+
+function potsUsingTarget(key) {
+  const result = [];
+  for (const [idx, pot] of Object.entries(activeProfile().pots)) {
+    if ((pot.targets || []).some((t) => lc(t) === lc(key))) result.push(Number(idx));
+  }
+  return result.sort((a, b) => a - b);
+}
+
+function knownTarget(key) {
+  const k = lc(key);
+  return SPECIALS.some((sp) => sp.key === k) || S.sessions.some((ss) => ss.key === k);
+}
+
+/* ── saving ───────────────────────────────────── */
+function commit(opts = {}) {
+  render();
+  scheduleSave(opts.immediate ? 0 : 350);
+}
+
+function scheduleSave(delay = 350) {
+  clearTimeout(saveTimer);
+  setSaveState("pending", "saving…");
+  saveTimer = setTimeout(saveNow, delay);
+}
+
+async function saveNow() {
+  saveTimer = null;
+  if (saving) { scheduleSave(150); return; }
+  saving = true;
+
+  const previousPort = JSON.parse(serverConfigJSON || "{}")?.web_ui?.port;
+
+  try {
+    const res = await fetch("/api/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(S.config),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || "save failed");
+
+    serverConfigJSON = JSON.stringify(body);
+    if (!saveTimer) S.config = body;
+    setSaveState("ok", "saved ✓");
+
+    if (previousPort && body.web_ui.port !== previousPort) {
+      toast(`Control panel moving to port ${body.web_ui.port}…`);
+      setTimeout(() => { location.href = `http://localhost:${body.web_ui.port}/`; }, 1200);
+    }
+  } catch (err) {
+    setSaveState("", "");
+    toast(err.message, true);
+    S.config = JSON.parse(serverConfigJSON);
+  } finally {
+    saving = false;
+    render();
+  }
+}
+
+function setSaveState(cls, text) {
+  const el = $("#saveState");
+  el.className = "save-state " + cls;
+  el.textContent = text;
+  if (cls === "ok") setTimeout(() => { if (el.textContent === text) el.textContent = ""; }, 1600);
+}
+
+let toastTimer;
+function toast(msg, error = false) {
+  const el = $("#toast");
+  el.textContent = msg;
+  el.className = "toast show" + (error ? " error" : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = "toast"; }, 2600);
+}
+
+/* ── rendering ────────────────────────────────── */
+function render() {
+  if (!S.config) return;
+
+  // keep focus + caret where they were, across full re-renders
+  const active = document.activeElement;
+  const fk = active && active.dataset ? active.dataset.fk : null;
+  let selStart = null, selEnd = null;
+  try { selStart = active.selectionStart; selEnd = active.selectionEnd; } catch (_) {}
+
+  renderTabs();
+  renderProfileBar();
+  renderMixer();
+  renderDock();
+  if (S.drawer) renderDrawer();
+  updateLive();
+
+  if (fk) {
+    const el = document.querySelector(`[data-fk="${CSS.escape(fk)}"]`);
+    if (el) {
+      el.focus();
+      try { if (selStart != null) el.setSelectionRange(selStart, selEnd); } catch (_) {}
+    }
+  }
+}
+
+function renderTabs() {
+  const tabs = S.profiles.map((name, i) => {
+    const profile = S.config.profiles[name];
+    return h("button", {
+      class: "tab" + (name === S.config.active_profile ? " on" : ""),
+      title: profile.auto_activate.length ? `Auto-activates with ${profile.auto_activate.join(", ")}` : `Switch to ${name}`,
+      onclick: () => activateProfile(name),
+    },
+      profile.auto_activate.length ? h("span", { class: "bolt" }, "⚡") : null,
+      name,
+      i < 9 ? h("span", { class: "key" }, i + 1) : null,
+    );
+  });
+
+  if (S.newProfile) {
+    tabs.push(h("input", {
+      class: "tab-input", placeholder: "profile name", "data-fk": "new-profile", maxlength: 40,
+      onkeydown: (e) => {
+        if (e.key === "Enter") createProfile(e.target.value);
+        if (e.key === "Escape") { S.newProfile = false; render(); }
+      },
+      onblur: (e) => { if (!e.target.value.trim()) { S.newProfile = false; render(); } },
+    }));
+  } else {
+    tabs.push(h("button", { class: "tab", title: "New profile", onclick: () => { S.newProfile = true; render(); $("[data-fk=new-profile]").focus(); } }, "+ New"));
+  }
+
+  $("#tabs").replaceChildren(...tabs);
+}
+
+function renderProfileBar() {
+  const name = S.config.active_profile;
+  const profile = activeProfile();
+
+  const title = S.renaming
+    ? h("input", {
+      class: "tab-input", value: name, "data-fk": "rename-profile", maxlength: 40,
+      onkeydown: (e) => {
+        if (e.key === "Enter") renameProfile(e.target.value);
+        if (e.key === "Escape") { S.renaming = false; render(); }
+      },
+      onblur: (e) => renameProfile(e.target.value),
+    })
+    : h("span", { class: "label" }, "Profile ", h("b", {}, name));
+
+  const triggers = profile.auto_activate.map((proc) =>
+    h("span", { class: "chip" }, h("span", { class: "nm" }, proc),
+      h("button", { class: "x", title: "Remove", onclick: () => { profile.auto_activate = profile.auto_activate.filter((p) => p !== proc); commit(); } }, "×")));
+
+  $("#profileBar").replaceChildren(
+    title,
+    h("span", { class: "label", style: { "margin-left": "8px" } }, "⚡ auto-activate while running:"),
+    h("div", { class: "chips", style: { flex: "1", "min-width": "200px" } },
+      triggers,
+      h("input", {
+        class: "chip-input", placeholder: profile.auto_activate.length ? "add app…" : "e.g. rocketleague.exe", list: "session-list", "data-fk": "trigger-input",
+        onkeydown: (e) => {
+          if (e.key !== "Enter" || !e.target.value.trim()) return;
+          const value = e.target.value.trim();
+          if (!profile.auto_activate.some((p) => lc(p) === lc(value))) profile.auto_activate.push(value);
+          e.target.value = "";
+          commit();
+        },
+      })),
+    h("button", { class: "btn ghost", onclick: () => { S.renaming = true; render(); $("[data-fk=rename-profile]").select(); } }, "Rename"),
+    h("button", { class: "btn ghost", onclick: duplicateProfile }, "Duplicate"),
+    h("button", { class: "btn ghost danger", disabled: S.profiles.length < 2, onclick: deleteProfile }, "Delete"),
+    sessionDatalist(),
+  );
+}
+
+function sessionDatalist() {
+  const options = new Set([...S.sessions.map((ss) => ss.key)]);
+  return h("datalist", { id: "session-list" }, [...options].map((key) => h("option", { value: key })));
+}
+
+function targetDatalist() {
+  const options = new Set([...SPECIALS.map((sp) => sp.key), ...S.sessions.map((ss) => ss.key)]);
+  return h("datalist", { id: "target-list" }, [...options].map((key) => h("option", { value: key })));
+}
+
+function renderMixer() {
+  const count = potCount();
+  const strips = [];
+  for (let idx = 0; idx < count; idx++) strips.push(stripEl(idx));
+
+  strips.push(h("button", { class: "add-strip", title: "Configure another pot ahead of time", onclick: () => { ensurePot(count); commit(); } }, "+ Pot"));
+  strips.push(targetDatalist());
+
+  $("#mixer").replaceChildren(...strips);
+
+  const st = S.status;
+  $("#mixerHint").textContent = st.state === "connected"
+    ? `${st.num_sliders} detected on ${st.port}. Move one to find it.`
+    : "Showing configured pots. Connect your deej to see them move.";
+}
+
+function stripEl(idx) {
+  const pot = getPot(idx) || blankPot();
+  const color = potColor(idx, pot);
+  const online = idx < (S.status.num_sliders || 0);
+  const configured = !!getPot(idx);
+
+  const el = h("section", {
+    class: "strip" + (online ? "" : " offline") + (S.armed ? " armed" : "") + " novalue",
+    dataset: { idx },
+    style: { "--c": color },
+    onclick: () => { if (S.armed) { addTarget(idx, S.armed); S.armed = null; render(); } },
+    ondragover: (e) => { e.preventDefault(); el.classList.add("drop"); },
+    ondragleave: () => el.classList.remove("drop"),
+    ondrop: (e) => {
+      e.preventDefault();
+      el.classList.remove("drop");
+      const key = e.dataTransfer.getData("text/plain");
+      const from = e.dataTransfer.getData("application/x-deej-from");
+      if (!key) return;
+      if (from !== "" && Number(from) !== idx) removeTarget(Number(from), key, false);
+      addTarget(idx, key);
+    },
+  });
+
+  const head = h("div", { class: "strip-head" },
+    h("span", { class: "idx" }, `POT ${idx + 1}`),
+    h("span", { class: "state" }, online ? "" : "offline"),
+    !online && configured ? h("button", { class: "x", title: "Forget this pot in this profile", onclick: (e) => { e.stopPropagation(); delete activeProfile().pots[idx]; commit(); } }, "✕") : null,
+  );
+
+  const name = h("input", {
+    class: "name", value: pot.name, placeholder: defaultPotName(idx, pot), "data-fk": `name-${idx}`, maxlength: 24,
+    oninput: (e) => { ensurePot(idx).name = e.target.value; scheduleSave(); },
+  });
+
+  const type = seg([["slider", "Slider"], ["knob", "Knob"]], pot.type, (v) => setHardware(idx, "type", v));
+
+  const visual = pot.type === "knob" ? knobEl() : faderEl(pot);
+
+  const readout = h("div", { class: "readout" },
+    h("span", { class: "val" }, "--"), h("span", { class: "pct" }, "%"), h("span", { class: "raw" }, ""));
+
+  const targets = h("div", { class: "targets" },
+    pot.targets.length ? h("div", { class: "chips" }, pot.targets.map((t) => targetChip(idx, t))) : h("div", { class: "empty" }, "Drop apps here"),
+    h("input", {
+      class: "chip-input", placeholder: "+ add target", list: "target-list", "data-fk": `target-${idx}`,
+      onclick: (e) => e.stopPropagation(),
+      onkeydown: (e) => {
+        if (e.key === "Enter" && e.target.value.trim()) { addTarget(idx, e.target.value.trim()); }
+      },
+    }),
+  );
+
+  const tune = h("details", {
+    class: "tune", open: !!S.tuneOpen[idx] || !!S.calibrating[idx],
+    ontoggle: (e) => { S.tuneOpen[idx] = e.target.open; },
+  },
+    h("summary", {}, "Tune"),
+    h("div", { class: "tune-body" },
+      h("div", { class: "row" }, "Invert direction", toggle(pot.invert, (v) => setHardware(idx, "invert", v))),
+      h("div", { class: "row" }, "Curve", seg([["linear", "Linear"], ["audio", "Audio"]], pot.curve, (v) => { ensurePot(idx).curve = v; commit(); })),
+      pot.curve === "audio" ? h("div", { class: "note" }, "Audio curve gives finer control at low volumes.") : null,
+      calibrationEl(idx, pot),
+      h("div", { class: "row" }, "Color",
+        h("div", { class: "swatches" }, PALETTE.map((c) =>
+          h("button", { class: c === color ? "on" : "", style: { background: c }, title: c, onclick: () => { ensurePot(idx).color = c; commit(); } })))),
+      h("div", { class: "note" }, "Type, direction and calibration are hardware settings, so they apply to every profile."),
+    ),
+  );
+
+  appendKids(el, [head, name, type, visual, readout, targets, tune]);
+  return el;
+}
+
+function defaultPotName(idx, pot) {
+  const first = pot.targets[0];
+  if (!first) return `Pot ${idx + 1}`;
+  const nice = first.replace(/\.exe$/i, "").replace(/^deej\./, "");
+  return nice.charAt(0).toUpperCase() + nice.slice(1);
+}
+
+function targetChip(idx, target) {
+  const special = SPECIALS.find((sp) => sp.key === lc(target));
+  const known = knownTarget(target);
+  return h("span", {
+    class: "chip" + (special ? " special" : "") + (known ? "" : " missing"),
+    title: special ? special.desc : known ? `${target}: running now. Drag to another pot to move it.` : `${target}: not running right now`,
+    draggable: "true",
+    ondragstart: (e) => {
+      e.dataTransfer.setData("text/plain", target);
+      e.dataTransfer.setData("application/x-deej-from", String(idx));
+      e.dataTransfer.effectAllowed = "move";
+    },
+  },
+    h("span", { class: "nm" }, target),
+    h("button", { class: "x", title: "Remove", onclick: (e) => { e.stopPropagation(); removeTarget(idx, target); } }, "×"));
+}
+
+function calibrationEl(idx, pot) {
+  const cal = S.calibrating[idx];
+  if (cal) {
+    return h("div", { class: "cal" },
+      h("div", { class: "note", style: { color: "var(--text)" } }, "Sweep the pot all the way, end to end."),
+      h("div", { class: "nums", dataset: { calNums: idx } }, calText(cal)),
+      h("div", { class: "row" },
+        h("button", { class: "btn", onclick: () => { delete S.calibrating[idx]; render(); } }, "Cancel"),
+        h("button", {
+          class: "btn primary", onclick: () => {
+            const c = S.calibrating[idx];
+            delete S.calibrating[idx];
+            if (c.max - c.min < 16) { toast("Move the pot further to calibrate", true); render(); return; }
+            for (const profile of Object.values(S.config.profiles)) {
+              const p = ensurePot(idx, profile);
+              p.min = c.min; p.max = c.max;
+            }
+            commit();
+            toast(`Pot ${idx + 1} calibrated to ${c.min}–${c.max}`);
+          },
+        }, "Save range")));
+  }
+
+  const custom = pot.min > 0 || pot.max < 1023;
+  return h("div", { class: "row" },
+    h("span", {}, "Range ", h("span", { style: { "font-family": "var(--mono)", color: "var(--text)" } }, `${pot.min}–${pot.max}`)),
+    h("span", { style: { display: "flex", gap: "4px" } },
+      custom ? h("button", { class: "btn ghost", title: "Reset to full range", onclick: () => { setHardware(idx, "min", 0); setHardware(idx, "max", 1023); } }, "Reset") : null,
+      h("button", {
+        class: "btn", disabled: idx >= (S.status.num_sliders || 0), title: "Learn this pot's real end points",
+        onclick: () => { S.calibrating[idx] = { min: 1023, max: 0 }; S.tuneOpen[idx] = true; render(); },
+      }, "Calibrate")));
+}
+
+const calText = (cal) => cal.max < cal.min ? "waiting for movement…" : `min ${cal.min} · max ${cal.max}`;
+
+function seg(options, current, onPick) {
+  return h("div", { class: "seg", onclick: (e) => e.stopPropagation() },
+    options.map(([value, label]) => h("button", { class: value === current ? "on" : "", onclick: () => { if (value !== current) onPick(value); } }, label)));
+}
+
+function toggle(checked, onChange) {
+  return h("label", { class: "switch", onclick: (e) => e.stopPropagation() },
+    h("input", { type: "checkbox", checked, onchange: (e) => onChange(e.target.checked) }), h("span"));
+}
+
+function faderEl(pot) {
+  const segments = [];
+  for (let i = 0; i < METER_SEGMENTS; i++) {
+    const cls = i >= METER_SEGMENTS - 2 ? "peak" : i >= METER_SEGMENTS - 6 ? "hot" : "";
+    segments.push(h("i", { class: cls }));
+  }
+
+  return h("div", { class: "fader" },
+    h("div", { class: "meter" }, segments),
+    h("div", { class: "track" }, h("div", { class: "fill" }), h("div", { class: "cap" })),
+    h("div", { class: "scale" }, ["100", "75", "50", "25", "0"].map((t) => h("span", {}, t))));
+}
+
+function knobEl() {
+  const ticks = [];
+  for (let i = 0; i <= 10; i++) {
+    const angle = -135 + i * 27;
+    ticks.push(s("line", { class: "k-tick", x1: 70, y1: 4, x2: 70, y2: i % 5 === 0 ? 11 : 8, transform: `rotate(${angle} 70 70)` }));
+  }
+
+  return h("div", { class: "knob" },
+    s("svg", { viewBox: "0 0 140 140" },
+      ticks,
+      s("circle", { class: "k-track", cx: 70, cy: 70, r: 52, pathLength: 100, "stroke-dasharray": "75 100", transform: "rotate(135 70 70)" }),
+      s("circle", { class: "k-arc", cx: 70, cy: 70, r: 52, pathLength: 100, "stroke-dasharray": "0 100", transform: "rotate(135 70 70)" }),
+      s("g", { class: "k-body" },
+        s("circle", { class: "k-cap", cx: 70, cy: 70, r: 38 }),
+        s("circle", { class: "k-ring", cx: 70, cy: 70, r: 32 }),
+        s("line", { class: "k-ptr", x1: 70, y1: 52, x2: 70, y2: 38 }))));
+}
+
+function renderDock() {
+  const order = { master: 0, mic: 1, system: 2, device: 3, app: 4 };
+  const sessions = [...S.sessions].sort((a, b) => (order[a.kind] - order[b.kind]) || a.key.localeCompare(b.key));
+  const apps = sessions.filter((ss) => ss.kind === "app");
+  const devices = sessions.filter((ss) => ss.kind !== "app");
+
+  const groups = [];
+  groups.push(h("div", { class: "group" },
+    h("div", { class: "group-label" }, "Apps playing audio"),
+    h("div", { class: "chips" }, apps.length ? apps.map(sessionChip) : h("span", { class: "note" }, "Nothing's playing right now. Start some audio and it shows up here."))));
+
+  if (devices.length) {
+    groups.push(h("div", { class: "group" },
+      h("div", { class: "group-label" }, "Devices"),
+      h("div", { class: "chips" }, devices.map(sessionChip))));
+  }
+
+  groups.push(h("div", { class: "group" },
+    h("div", { class: "group-label" }, "Special targets"),
+    h("div", { class: "chips" }, SPECIALS
+      .filter((sp) => !devices.some((d) => d.key === sp.key))
+      .map((sp) => sessionChip({ key: sp.key, kind: "special", desc: sp.desc })))));
+
+  $("#dock").replaceChildren(...groups);
+}
+
+function sessionChip(ss) {
+  const pots = potsUsingTarget(ss.key);
+  const special = ss.kind === "special";
+
+  return h("button", {
+    class: "chip sess" + (special ? " special" : "") + (S.armed === ss.key ? " arming" : ""),
+    draggable: "true",
+    dataset: { key: ss.key },
+    title: ss.desc || (pots.length ? `On pot ${pots.map((p) => p + 1).join(", ")}` : "Click, then click a pot to assign"),
+    ondragstart: (e) => { e.dataTransfer.setData("text/plain", ss.key); e.dataTransfer.effectAllowed = "copy"; },
+    onclick: () => { S.armed = S.armed === ss.key ? null : ss.key; render(); },
+  },
+    ss.kind !== "app" ? h("span", { class: "kind" }, special ? "fx" : ss.kind === "device" ? "dev" : ss.kind) : null,
+    h("span", { class: "nm" }, ss.key),
+    ss.volume != null ? h("span", { class: "vol", title: `${Math.round(ss.volume * 100)}%` }, h("i", { style: { width: `${Math.round(ss.volume * 100)}%` } })) : null,
+    ss.count > 1 ? h("span", { class: "count" }, `×${ss.count}`) : null,
+    pots.length ? h("span", { class: "dots" }, pots.map((p) => h("i", { style: { background: potColor(p, getPot(p)) } }))) : null);
+}
+
+/* ── live updates (no re-render) ─────────────── */
+function updateLive() {
+  const st = S.status;
+  const values = st.values || [];
+  const raw = st.raw || [];
+
+  document.querySelectorAll(".strip").forEach((el) => {
+    const idx = Number(el.dataset.idx);
+    const v = values[idx];
+    const r = raw[idx];
+
+    if (v == null || v < 0) {
+      el.classList.add("novalue");
+      el.style.setProperty("--v", 0);
+      $(".readout .val", el).textContent = "--";
+      $(".readout .raw", el).textContent = "";
+      return;
+    }
+
+    el.classList.remove("novalue");
+    el.style.setProperty("--v", v);
+    $(".readout .val", el).textContent = Math.round(v * 100);
+    $(".readout .raw", el).textContent = r != null ? `raw ${r}` : "";
+
+    const lit = Math.round(v * METER_SEGMENTS);
+    el.querySelectorAll(".meter i").forEach((seg, i) => seg.classList.toggle("on", i < lit));
+
+    const arc = $(".k-arc", el);
+    if (arc) arc.setAttribute("stroke-dasharray", `${(75 * v).toFixed(2)} 100`);
+
+    const cal = S.calibrating[idx];
+    if (cal && r != null) {
+      cal.min = Math.min(cal.min, r);
+      cal.max = Math.max(cal.max, r);
+      const nums = $(`[data-cal-nums="${idx}"]`);
+      if (nums) nums.textContent = calText(cal);
+    }
+
+    const prev = S.lastValues[idx];
+    if (prev != null && prev >= 0 && prev !== v) flash(idx, el);
+  });
+
+  S.lastValues = values.slice();
+  updateConnection();
+}
+
+// light up a strip (and the sessions it controls) when its physical pot moves
+function flash(idx, el) {
+  el.classList.add("live");
+  const pot = getPot(idx);
+  const color = potColor(idx, pot);
+  const chips = [];
+
+  for (const target of (pot && pot.targets) || []) {
+    document.querySelectorAll(`.sess[data-key="${CSS.escape(lc(target))}"]`).forEach((chip) => {
+      chip.style.setProperty("--pc", color);
+      chip.classList.add("pulse");
+      chips.push(chip);
+    });
+  }
+
+  clearTimeout(S.liveTimers[idx]);
+  S.liveTimers[idx] = setTimeout(() => {
+    const current = document.querySelector(`.strip[data-idx="${idx}"]`);
+    if (current) current.classList.remove("live");
+    document.querySelectorAll(".sess.pulse").forEach((chip) => chip.classList.remove("pulse"));
+  }, 700);
+}
+
+function updateConnection() {
+  const st = S.status;
+  const pill = $("#conn");
+  pill.className = "pill " + (S.offline ? "disconnected" : st.state);
+
+  let text;
+  if (S.offline) text = "deej offline";
+  else if (st.state === "connected") text = `${st.port} · ${st.num_sliders} pots${st.auto_detect ? " · auto" : ""}`;
+  else if (st.state === "searching") text = "Searching for deej…";
+  else if (st.state === "connecting") text = `Connecting to ${st.port}…`;
+  else text = st.error ? `Disconnected: ${shortError(st.error)}` : "Disconnected";
+
+  $("#connText").textContent = text;
+  pill.title = st.error || "Connection settings";
+}
+
+function shortError(err) {
+  if (/no deej found/i.test(err)) return "not found";
+  if (/permission|access is denied/i.test(err)) return "port busy";
+  if (/no such file|cannot find/i.test(err)) return "no such port";
+  if (/disappeared/i.test(err)) return "unplugged";
+  return "retrying";
+}
+
+/* ── actions ──────────────────────────────────── */
+function addTarget(idx, key) {
+  const pot = ensurePot(idx);
+  if (!pot.targets.some((t) => lc(t) === lc(key))) pot.targets.push(key);
+  commit();
+}
+
+function removeTarget(idx, key, save = true) {
+  const pot = getPot(idx);
+  if (!pot) return;
+  pot.targets = pot.targets.filter((t) => lc(t) !== lc(key));
+  if (save) commit();
+}
+
+function activateProfile(name) {
+  if (name === S.config.active_profile) return;
+  S.config.active_profile = name;
+  S.renaming = false;
+  S.calibrating = {};
+  commit({ immediate: true });
+  toast(`Profile: ${name}`);
+}
+
+function validName(name, except) {
+  name = name.trim();
+  if (!name) return null;
+  if (S.profiles.includes(name) && name !== except) { toast(`"${name}" already exists`, true); return null; }
+  return name;
+}
+
+function createProfile(raw) {
+  const name = validName(raw);
+  if (!name) return;
+
+  // carry over the hardware (and looks), start with nothing assigned
+  const pots = {};
+  for (const [idx, pot] of Object.entries(activeProfile().pots)) {
+    pots[idx] = { ...blankPot(), type: pot.type, invert: pot.invert, min: pot.min, max: pot.max, color: pot.color };
+  }
+
+  S.config.profiles[name] = { auto_activate: [], pots };
+  S.profiles.push(name);
+  S.newProfile = false;
+  activateProfile(name);
+}
+
+function duplicateProfile() {
+  const base = S.config.active_profile;
+  let name = `${base} copy`;
+  for (let n = 2; S.profiles.includes(name); n++) name = `${base} copy ${n}`;
+
+  const copy = clone(activeProfile());
+  copy.auto_activate = [];
+  S.config.profiles[name] = copy;
+  S.profiles.push(name);
+  activateProfile(name);
+}
+
+function renameProfile(raw) {
+  if (!S.renaming) return;
+  S.renaming = false;
+  const old = S.config.active_profile;
+  const name = validName(raw, old);
+  if (!name || name === old) { render(); return; }
+
+  S.config.profiles[name] = S.config.profiles[old];
+  delete S.config.profiles[old];
+  S.config.active_profile = name;
+  S.profiles = S.profiles.map((p) => (p === old ? name : p));
+  commit({ immediate: true });
+}
+
+function deleteProfile() {
+  const name = S.config.active_profile;
+  if (S.profiles.length < 2) return;
+  if (!confirm(`Delete profile "${name}"?`)) return;
+
+  delete S.config.profiles[name];
+  S.profiles = S.profiles.filter((p) => p !== name);
+  S.config.active_profile = S.profiles[0];
+  commit({ immediate: true });
+}
+
+/* ── settings drawer ──────────────────────────── */
+function openDrawer() {
+  S.drawer = true;
+  $("#drawer").classList.add("open");
+  $("#scrim").classList.add("open");
+  renderDrawer();
+  loadPorts(false);
+}
+
+function closeDrawer() {
+  S.drawer = false;
+  $("#drawer").classList.remove("open");
+  $("#scrim").classList.remove("open");
+}
+
+async function loadPorts(probe) {
+  if (probe) { S.probing = true; renderDrawer(); }
+  try {
+    const res = await fetch("/api/ports" + (probe ? "?probe=1" : ""));
+    S.ports = await res.json();
+  } catch (_) {
+    S.ports = [];
+  }
+  S.probing = false;
+  if (probe) {
+    const found = S.ports.filter((p) => p.is_deej);
+    toast(found.length ? `Found deej on ${found.map((p) => p.name).join(", ")}` : "No deej answered on any port", !found.length);
+  }
+  if (S.drawer) renderDrawer();
+}
+
+function renderDrawer() {
+  const cfg = S.config;
+  const st = S.status;
+
+  const portNames = new Set((S.ports || []).map((p) => p.name));
+  if (cfg.com_port !== "auto") portNames.add(cfg.com_port);
+
+  const portSelect = h("select", {
+    onchange: (e) => { cfg.com_port = e.target.value; commit({ immediate: true }); },
+  },
+    h("option", { value: "auto" }, "Auto-detect (recommended)"),
+    [...portNames].map((name) => h("option", { value: name }, name)));
+  portSelect.value = cfg.com_port;
+
+  const baudSelect = h("select", { onchange: (e) => { cfg.baud_rate = Number(e.target.value); commit({ immediate: true }); } },
+    [...new Set([...BAUD_RATES, cfg.baud_rate])].sort((a, b) => a - b).map((b) => h("option", { value: b }, b)));
+  baudSelect.value = String(cfg.baud_rate);
+
+  const portList = (S.ports || []).map((p) => h("button", {
+    class: "port" + (p.is_deej ? " deej" : ""),
+    title: "Use this port",
+    onclick: () => { cfg.com_port = p.name; commit({ immediate: true }); },
+  },
+    h("div", { style: { "min-width": "0" } }, h("div", { class: "pn" }, p.name), h("div", { class: "pd" }, p.description || "serial port")),
+    h("span", { class: "badge" },
+      p.connected ? `connected · ${p.num_sliders} pots` : p.is_deej ? `deej · ${p.num_sliders} pots` : "is_deej" in p ? "no deej" : "")));
+
+  $("#drawer").replaceChildren(
+    h("div", { class: "row" }, h("h2", {}, "Settings"), h("button", { class: "icon-btn", onclick: closeDrawer, "aria-label": "Close" }, "✕")),
+
+    h("section", {},
+      h("h3", {}, "Connection"),
+      h("div", { class: "field" }, h("label", {}, "Serial port"), portSelect,
+        h("div", { class: "help" }, "Auto-detect listens on every serial port and picks the one sending deej data. It also follows the board if it changes port.")),
+      h("div", { class: "field" }, h("label", {}, "Baud rate"), baudSelect,
+        h("div", { class: "help" }, "Must match Serial.begin() in your sketch.")),
+      h("div", { class: "row", style: { "margin-bottom": "10px" } },
+        h("button", { class: "btn", disabled: S.probing, onclick: () => loadPorts(true) }, S.probing ? h("span", { class: "spin" }) : null, S.probing ? "Scanning…" : "Scan for deej"),
+        h("button", { class: "btn ghost", onclick: () => fetch("/api/reconnect", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).then(() => toast("Reconnecting…")) }, "Reconnect now")),
+      h("div", { class: "ports" }, portList.length ? portList : h("div", { class: "note" }, S.ports ? "No serial ports found. Is the board plugged in?" : "Loading ports…")),
+    ),
+
+    h("section", {},
+      h("h3", {}, "Noise reduction"),
+      seg([["low", "Low"], ["default", "Default"], ["high", "High"]], cfg.noise_reduction, (v) => { cfg.noise_reduction = v; commit(); }),
+      h("div", { class: "note", style: { "margin-top": "8px" } }, "Raise it if volumes jitter on their own. Lower it for finer steps on good hardware.")),
+
+    h("section", {},
+      h("h3", {}, "Control panel"),
+      h("div", { class: "field" }, h("label", {}, "Port"),
+        h("input", {
+          type: "number", min: 1024, max: 65535, value: cfg.web_ui.port,
+          onchange: (e) => {
+            const port = Number(e.target.value);
+            if (port >= 1024 && port <= 65535) { cfg.web_ui.port = port; commit({ immediate: true }); }
+          },
+        })),
+      h("div", { class: "row" }, "Open this page when deej starts", toggle(cfg.web_ui.open_on_start, (v) => { cfg.web_ui.open_on_start = v; commit(); }))),
+
+    h("section", {},
+      h("h3", {}, "About"),
+      h("dl", { class: "kv" },
+        h("dt", {}, "Status"), h("dd", {}, st.state + (st.error ? ` (${st.error})` : "")),
+        h("dt", {}, "Platform"), h("dd", {}, S.platform),
+        h("dt", {}, "Version"), h("dd", {}, S.version || "dev build"),
+        h("dt", {}, "Config"), h("dd", {}, "config.yaml, next to deej")),
+      h("div", { class: "note", style: { "margin-top": "10px" } }, "Everything here saves to config.yaml right away. Hand edits to that file show up here live too.")),
+  );
+}
+
+/* ── server connection ────────────────────────── */
+function applyState(state) {
+  S.config = state.config;
+  S.profiles = state.profiles;
+  S.status = state.status;
+  S.sessions = state.sessions || [];
+  S.platform = state.platform;
+  S.version = state.version;
+  serverConfigJSON = JSON.stringify(state.config);
+  $("#version").textContent = state.version || "deej remix";
+  render();
+}
+
+async function loadState() {
+  const res = await fetch("/api/state");
+  applyState(await res.json());
+}
+
+function setOffline(offline) {
+  if (S.offline === offline) return;
+  S.offline = offline;
+  $("#banner").classList.toggle("show", offline);
+  updateConnection();
+}
+
+function connectEvents() {
+  const events = new EventSource("/api/events");
+
+  events.addEventListener("open", () => {
+    if (S.offline) loadState().then(() => setOffline(false)).catch(() => {});
+  });
+  events.addEventListener("error", () => setOffline(true));
+
+  events.addEventListener("serial", (e) => {
+    const previousCount = S.status.num_sliders;
+    S.status = JSON.parse(e.data);
+    if (!S.config) return;
+
+    // calibration only makes sense while the pot is online
+    if (S.status.state !== "connected" && Object.keys(S.calibrating).length) S.calibrating = {};
+
+    if (S.status.num_sliders !== previousCount) render();
+    else updateLive();
+  });
+
+  events.addEventListener("sessions", (e) => {
+    S.sessions = JSON.parse(e.data);
+    if (!S.config) return;
+    renderDock();
+    // refresh "not running" markers and suggestions without stealing focus
+    if (!document.activeElement || !document.activeElement.dataset.fk) render();
+  });
+
+  events.addEventListener("config", (e) => {
+    const { config, profiles } = JSON.parse(e.data);
+    const json = JSON.stringify(config);
+    if (json === serverConfigJSON) return;
+    serverConfigJSON = json;
+
+    // our own pending edits win, they're about to be saved
+    if (saveTimer || saving) return;
+
+    S.config = config;
+    S.profiles = profiles;
+    render();
+  });
+}
+
+/* ── wiring ───────────────────────────────────── */
+$("#openSettings").addEventListener("click", openDrawer);
+$("#conn").addEventListener("click", openDrawer);
+$("#scrim").addEventListener("click", closeDrawer);
+$("#rescan").addEventListener("click", async () => {
+  const res = await fetch("/api/sessions/refresh", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  S.sessions = await res.json();
+  render();
+  toast(`${S.sessions.length} audio sessions`);
+});
+
+document.addEventListener("keydown", (e) => {
+  const typing = /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName);
+
+  if (e.key === "Escape") {
+    if (S.armed) { S.armed = null; render(); }
+    else if (S.drawer) closeDrawer();
+    return;
+  }
+
+  if (!typing && !e.ctrlKey && !e.metaKey && !e.altKey && /^[1-9]$/.test(e.key) && S.config) {
+    const name = S.profiles[Number(e.key) - 1];
+    if (name) activateProfile(name);
+  }
+});
+
+loadState()
+  .then(() => { if (location.hash === "#settings") openDrawer(); })
+  .catch(() => setOffline(true))
+  .finally(connectEvents);
+</script>
+</body>
+</html>

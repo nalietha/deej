@@ -18,3 +18,4 @@ This document lists the various scripts in the project and their purposes.
 - [`build-dev.sh`](./linux/build-dev.sh): Builds deej for development purposes
 - [`build-release.sh`](./linux/build-release.sh): Builds deej for releases
 - [`build-all.sh`](./linux/build-all.sh): Helper script to build all variants
+- [`prepare-remix-release.sh`](./linux/prepare-remix-release.sh): Tests, builds (linux + cross-compiled windows) and packages a full remix release. Usage: `prepare-remix-release.sh vX.Y.Z-remix.N` (artifacts will be under `releases/vX.Y.Z-remix.N/`)

@@ -1,27 +1,76 @@
-# process names are case-insensitive
-# you can use 'master' to indicate the master channel, or a list of process names to create a group
-# you can use 'mic' to control your mic input level (uses the default recording device)
-# you can use 'deej.unmapped' to control all apps that aren't bound to any slider (this ignores master, system, mic and device-targeting sessions)
-# windows only - you can use 'deej.current' to control the currently active app (whether full-screen or not)
-# windows only - you can use a device's full name, i.e. "Speakers (Realtek High Definition Audio)", to bind it. this works for both output and input devices
-# windows only - you can use 'system' to control the "system sounds" volume
-# important: slider indexes start at 0, regardless of which analog pins you're using!
-slider_mapping:
-  0: master
-  1: chrome.exe
-  2: spotify.exe
-  3:
-    - pathofexile_x64.exe
-    - rocketleague.exe
-  4: discord.exe
+# deej remix configuration
+#
+# this file is managed by the deej control panel (tray icon -> "Open control panel"),
+# but you can still edit it by hand - changes are picked up live. comments below this header aren't kept.
+#
+# com_port:        "auto" finds your deej by itself, or name one explicitly (COM4, /dev/ttyUSB0)
+# noise_reduction: low (excellent hardware), default, or high (bad, noisy hardware)
+# pot targets:     process names (chrome.exe), master, mic, system, deej.unmapped, deej.current (windows),
+#                  or a device's full name, i.e. "Speakers (Realtek High Definition Audio)" (windows)
+# pot type:        slider | knob
+# pot curve:       linear | audio (finer control at low volumes)
+# pot min/max:     raw calibration (0-1023) for pots that don't quite reach their ends
+# auto_activate:   process names - while any of them runs, that profile takes over
+# important:       pot indexes start at 0, regardless of which analog pins you're using!
+#
+# vanilla deej configs (slider_mapping, invert_sliders) still work - they become the "default" profile.
 
-# set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
-invert_sliders: false
-
-# settings for connecting to the arduino board
-com_port: COM4
+com_port: auto
 baud_rate: 9600
-
-# adjust the amount of signal noise reduction depending on your hardware quality
-# supported values are "low" (excellent hardware), "default" (regular hardware) or "high" (bad, noisy hardware)
 noise_reduction: default
+web_ui:
+  enabled: true
+  port: 7979
+  open_on_start: false
+active_profile: default
+profiles:
+  default:
+    pots:
+      0:
+        name: Master
+        targets:
+        - master
+      1:
+        name: Browser
+        targets:
+        - chrome.exe
+      2:
+        name: Music
+        targets:
+        - spotify.exe
+      3:
+        name: Voice
+        targets:
+        - discord.exe
+      4:
+        name: Mic
+        targets:
+        - mic
+  gaming:
+    auto_activate:
+    - rocketleague.exe
+    - pathofexile_x64.exe
+    pots:
+      0:
+        name: Master
+        targets:
+        - master
+      1:
+        name: Game
+        type: knob
+        targets:
+        - rocketleague.exe
+        - pathofexile_x64.exe
+      2:
+        name: Voice
+        targets:
+        - discord.exe
+      3:
+        name: Everything else
+        curve: audio
+        targets:
+        - deej.unmapped
+      4:
+        name: Mic
+        targets:
+        - mic
